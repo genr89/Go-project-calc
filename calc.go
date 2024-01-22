@@ -4,7 +4,6 @@ import (
 	"fmt"
 )
 
-// Римские числа и их значения
 var romanNumerals = map[rune]int{
 	'I': 1,
 	'V': 5,
@@ -15,7 +14,6 @@ var romanNumerals = map[rune]int{
 	'M': 1000,
 }
 
-// Функция для преобразования римских чисел в арабские
 func romanToArabic(roman string) int {
 	result := 0
 
@@ -39,7 +37,6 @@ func romanToArabic(roman string) int {
 	return result
 }
 
-// Функция для преобразования арабских чисел в римские
 func arabicToRoman(arabic int) string {
 	result := ""
 
@@ -70,7 +67,6 @@ func arabicToRoman(arabic int) string {
 	return result
 }
 
-// Функция для выполнения операции сложения римских чисел
 func addRomanNumbers(roman1, roman2 string) string {
 	arabic1 := romanToArabic(roman1)
 	arabic2 := romanToArabic(roman2)
@@ -80,7 +76,7 @@ func addRomanNumbers(roman1, roman2 string) string {
 }
 
 func main() {
-	// Пример использования
+	// Пример использования II + II = IV
 	romanNumber1 := "II"
 	romanNumber2 := "II"
 
