@@ -1,13 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 )
 
-// Функция для преобразования римских чисел в десятичные
-func romanToDecimal(roman string) int {
-	romanMap := map[string]int{
+// Функция для конвертации римских цифр в арабские
+func romanToArabic(roman string) int {
+	romanNumerals := map[string]int{
 		"I": 1,
 		"V": 5,
 		"X": 10,
@@ -16,88 +18,86 @@ func romanToDecimal(roman string) int {
 		"D": 500,
 		"M": 1000,
 	}
-
-	var result int
-	prevValue := 0
-
-	for i := len(roman) - 1; i >= 0; i-- {
-		value := romanMap[string(roman[i])]
-		if value < prevValue {
-			result -= value
+	arabic := 0
+	for i := 0; i < len(roman); i++ {
+		if i > 0 && romanNumerals[string(roman[i])] > romanNumerals[string(roman[i-1])] {
+			arabic += romanNumerals[string(roman[i])] - 2*romanNumerals[string(roman[i-1])]
 		} else {
-			result += value
+			arabic += romanNumerals[string(roman[i])]
 		}
-		prevValue = value
 	}
-
-	return result
+	return arabic
 }
 
-// Функция для преобразования десятичных чисел в римские
-func decimalToRoman(decimal int) string {
-	romanMap := map[int]string{
-		1:    "I",
-		4:    "IV",
-		5:    "V",
-		9:    "IX",
-		10:   "X",
-		40:   "XL",
-		50:   "L",
-		90:   "XC",
-		100:  "C",
-		400:  "CD",
-		500:  "D",
-		900:  "CM",
-		1000: "M",
+// Функция для конвертации арабских чисел в римские
+func arabicToRoman(arabic int) string {
+	romanNumerals := []struct {
+		Value  int
+		Symbol string
+	}{
+		{1000, "M"},
+		{900, "CM"},
+		{500, "D"},
+		{400, "CD"},
+		{100, "C"},
+		{90, "XC"},
+		{50, "L"},
+		{40, "XL"},
+		{10, "X"},
+		{9, "IX"},
+		{5, "V"},
+		{4, "IV"},
+		{1, "I"},
 	}
-
 	var result strings.Builder
-	values := []int{1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1}
-
-	for _, value := range values {
-		for decimal >= value {
-			result.WriteString(romanMap[value])
-			decimal -= value
+	for _, numeral := range romanNumerals {
+		for arabic >= numeral.Value {
+			result.WriteString(numeral.Symbol)
+			arabic -= numeral.Value
 		}
 	}
-
 	return result.String()
 }
 
 func main() {
-	var input1, input2 string
-	var operator rune
+	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Привет! Добро пожаловать в римский калькулятор.")
-	fmt.Println("Введите первое римское число:")
-	fmt.Scanln(&input1)
-	fmt.Println("Введите оператор (+, -, *, /):")
-	fmt.Scanln(&operator)
-	fmt.Println("Введите второе римское число:")
-	fmt.Scanln(&input2)
+	fmt.Println("Простой Римский Калькулятор")
+	fmt.Println("Введите выражение в формате: число оператор число (например: III + II)")
 
-	number1 := romanToDecimal(input1)
-	number2 := romanToDecimal(input2)
+	for {
+		fmt.Print(">> ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
 
-	var result int
-
-	switch operator {
-	case '+':
-		result = number1 + number2
-	case '-':
-		result = number1 - number2
-	case '*':
-		result = number1 * number2
-	case '/':
-		if number2 == 0 {
-			fmt.Println("Ошибка: деление на ноль")
-			return
+		// Разделение ввода на числа и оператор
+		parts := strings.Split(input, " ")
+		if len(parts) != 3 {
+			fmt.Println("Неправильный формат. Пожалуйста, введите выражение снова.")
+			continue
 		}
-		result = number1 / number2
-	default:
-		fmt.Println("Ошибка: неверный оператор")
-		return
-	}
 
-	fmt.Println("Результат:", decimalToRoman(result))
+		num1 := romanToArabic(parts[0])
+		operator := parts[1]
+		num2 := romanToArabic(parts[2])
+
+		// Выполнение операции
+		var result int
+		switch operator {
+		case "+":
+			result = num1 + num2
+		case "-":
+			result = num1 - num2
+		case "*":
+			result = num1 * num2
+		case "/":
+			result = num1 / num2
+		default:
+			fmt.Println("Неподдерживаемый оператор.")
+			continue
+		}
+
+		// Вывод результата в римских цифрах
+		fmt.Println(arabicToRoman(result))
+	}
 }
