@@ -8,7 +8,7 @@ import (
 )
 
 // Функция для конвертации римских цифр в арабские
-func romanToArabic(roman string) int {
+func romanToArabic(roman string) (int, error) {
 	romanNumerals := map[string]int{
 		"I": 1,
 		"V": 5,
@@ -26,11 +26,20 @@ func romanToArabic(roman string) int {
 			arabic += romanNumerals[string(roman[i])]
 		}
 	}
-	return arabic
+
+	if arabic == 0 {
+		return 0, fmt.Errorf("некорректный ввод")
+	}
+
+	return arabic, nil
 }
 
 // Функция для конвертации арабских чисел в римские
 func arabicToRoman(arabic int) string {
+	if arabic <= 0 {
+		return ""
+	}
+
 	romanNumerals := []struct {
 		Value  int
 		Symbol string
@@ -70,18 +79,26 @@ func main() {
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
-		// Разделение ввода на числа и оператор
 		parts := strings.Split(input, " ")
 		if len(parts) != 3 {
 			fmt.Println("Неправильный формат. Пожалуйста, введите выражение снова.")
 			continue
 		}
 
-		num1 := romanToArabic(parts[0])
-		operator := parts[1]
-		num2 := romanToArabic(parts[2])
+		num1, err := romanToArabic(parts[0])
+		if err != nil {
+			fmt.Println("Ошибка:", err)
+			continue
+		}
 
-		// Выполнение операции
+		operator := parts[1]
+
+		num2, err := romanToArabic(parts[2])
+		if err != nil {
+			fmt.Println("Ошибка:", err)
+			continue
+		}
+
 		var result int
 		switch operator {
 		case "+":
@@ -91,13 +108,16 @@ func main() {
 		case "*":
 			result = num1 * num2
 		case "/":
+			if num2 == 0 {
+				fmt.Println("Деление на ноль.")
+				continue
+			}
 			result = num1 / num2
 		default:
 			fmt.Println("Неподдерживаемый оператор.")
 			continue
 		}
 
-		// Вывод результата в римских цифрах
 		fmt.Println(arabicToRoman(result))
 	}
 }
