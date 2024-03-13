@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -19,25 +21,26 @@ func romanToArabic(roman string) (int, error) {
 		"M": 1000,
 	}
 	arabic := 0
-	for i := 0; i < len(roman); i++ {
-		if i > 0 && romanNumerals[string(roman[i])] > romanNumerals[string(roman[i-1])] {
-			arabic += romanNumerals[string(roman[i])] - 2*romanNumerals[string(roman[i-1])]
-		} else {
-			arabic += romanNumerals[string(roman[i])]
+	prevValue := 0
+	for _, r := range roman {
+		value, found := romanNumerals[string(r)]
+		if !found {
+			return 0, errors.New("некорректные римские цифры")
 		}
+		if prevValue < value {
+			arabic += value - 2*prevValue
+		} else {
+			arabic += value
+		}
+		prevValue = value
 	}
-
-	if arabic == 0 {
-		return 0, fmt.Errorf("некорректный ввод")
-	}
-
 	return arabic, nil
 }
 
 // Функция для конвертации арабских чисел в римские
-func arabicToRoman(arabic int) string {
-	if arabic <= 0 {
-		return ""
+func arabicToRoman(arabic int) (string, error) {
+	if arabic <= 0 || arabic > 3999 {
+		return "", errors.New("число вне диапазона (1-3999)")
 	}
 
 	romanNumerals := []struct {
@@ -58,6 +61,7 @@ func arabicToRoman(arabic int) string {
 		{4, "IV"},
 		{1, "I"},
 	}
+
 	var result strings.Builder
 	for _, numeral := range romanNumerals {
 		for arabic >= numeral.Value {
@@ -65,40 +69,50 @@ func arabicToRoman(arabic int) string {
 			arabic -= numeral.Value
 		}
 	}
-	return result.String()
+	return result.String(), nil
 }
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Println("Простой Римский Калькулятор")
-	fmt.Println("Введите выражение в формате: число оператор число (например: III + II)")
+	fmt.Println("Простой Римский/Арабский Калькулятор")
+	fmt.Println("Введите выражение в формате: число оператор число (например: III + II или 3 + 2)")
 
 	for {
 		fmt.Print(">> ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
+		// Разделение ввода на числа и оператор
 		parts := strings.Split(input, " ")
 		if len(parts) != 3 {
 			fmt.Println("Неправильный формат. Пожалуйста, введите выражение снова.")
 			continue
 		}
 
-		num1, err := romanToArabic(parts[0])
+		num1, err := strconv.Atoi(parts[0])
 		if err != nil {
-			fmt.Println("Ошибка:", err)
-			continue
+			// Попробуем интерпретировать ввод как римские числа
+			num1, err = romanToArabic(parts[0])
+			if err != nil {
+				fmt.Println("Ошибка:", err)
+				continue
+			}
 		}
 
 		operator := parts[1]
 
-		num2, err := romanToArabic(parts[2])
+		num2, err := strconv.Atoi(parts[2])
 		if err != nil {
-			fmt.Println("Ошибка:", err)
-			continue
+			// Попробуем интерпретировать ввод как римские числа
+			num2, err = romanToArabic(parts[2])
+			if err != nil {
+				fmt.Println("Ошибка:", err)
+				continue
+			}
 		}
 
+		// Выполнение операции
 		var result int
 		switch operator {
 		case "+":
@@ -109,7 +123,7 @@ func main() {
 			result = num1 * num2
 		case "/":
 			if num2 == 0 {
-				fmt.Println("Деление на ноль.")
+				fmt.Println("Ошибка: деление на ноль")
 				continue
 			}
 			result = num1 / num2
@@ -118,6 +132,16 @@ func main() {
 			continue
 		}
 
-		fmt.Println(arabicToRoman(result))
+		// Вывод результата в римских цифрах, если ввод был римским
+		if _, err := strconv.Atoi(parts[0]); err != nil {
+			romanResult, err := arabicToRoman(result)
+			if err != nil {
+				fmt.Println("Ошибка:", err)
+				continue
+			}
+			fmt.Println(romanResult)
+		} else {
+			fmt.Println(result)
+		}
 	}
 }
