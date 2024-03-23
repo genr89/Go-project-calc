@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -10,22 +9,22 @@ import (
 )
 
 // Функция для конвертации римских цифр в арабские
-func romanToArabic(roman string) (int, error) {
-	romanNumerals := map[string]int{
-		"I": 1,
-		"V": 5,
-		"X": 10,
-		"L": 50,
-		"C": 100,
-		"D": 500,
-		"M": 1000,
+func romanToArabic(roman string) int {
+	romanNumerals := map[rune]int{
+		'I': 1,
+		'V': 5,
+		'X': 10,
+		'L': 50,
+		'C': 100,
+		'D': 500,
+		'M': 1000,
 	}
 	arabic := 0
 	prevValue := 0
 	for _, r := range roman {
-		value, found := romanNumerals[string(r)]
+		value, found := romanNumerals[r]
 		if !found {
-			return 0, errors.New("некорректные римские цифры")
+			panic("некорректные римские цифры")
 		}
 		if prevValue < value {
 			arabic += value - 2*prevValue
@@ -34,13 +33,13 @@ func romanToArabic(roman string) (int, error) {
 		}
 		prevValue = value
 	}
-	return arabic, nil
+	return arabic
 }
 
 // Функция для конвертации арабских чисел в римские
-func arabicToRoman(arabic int) (string, error) {
+func arabicToRoman(arabic int) string {
 	if arabic <= 0 || arabic > 3999 {
-		return "", errors.New("число вне диапазона (1-3999)")
+		panic("число вне диапазона (1-3999)")
 	}
 
 	romanNumerals := []struct {
@@ -69,7 +68,7 @@ func arabicToRoman(arabic int) (string, error) {
 			arabic -= numeral.Value
 		}
 	}
-	return result.String(), nil
+	return result.String()
 }
 
 func main() {
@@ -92,24 +91,14 @@ func main() {
 
 		num1, err := strconv.Atoi(parts[0])
 		if err != nil {
-			// Попробуем интерпретировать ввод как римские числа
-			num1, err = romanToArabic(parts[0])
-			if err != nil {
-				fmt.Println("Ошибка:", err)
-				continue
-			}
+			num1 = romanToArabic(parts[0])
 		}
 
 		operator := parts[1]
 
 		num2, err := strconv.Atoi(parts[2])
 		if err != nil {
-			// Попробуем интерпретировать ввод как римские числа
-			num2, err = romanToArabic(parts[2])
-			if err != nil {
-				fmt.Println("Ошибка:", err)
-				continue
-			}
+			num2 = romanToArabic(parts[2])
 		}
 
 		// Выполнение операции
@@ -134,12 +123,7 @@ func main() {
 
 		// Вывод результата в римских цифрах, если ввод был римским
 		if _, err := strconv.Atoi(parts[0]); err != nil {
-			romanResult, err := arabicToRoman(result)
-			if err != nil {
-				fmt.Println("Ошибка:", err)
-				continue
-			}
-			fmt.Println(romanResult)
+			fmt.Println(arabicToRoman(result))
 		} else {
 			fmt.Println(result)
 		}
