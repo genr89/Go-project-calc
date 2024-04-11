@@ -24,7 +24,7 @@ func romanToArabic(roman string) (int, error) {
 	for _, r := range roman {
 		value, found := romanNumerals[r]
 		if !found {
-			return 0, fmt.Errorf("некорректные римские цифры: %s", roman)
+			panic(fmt.Sprintf("некорректные римские цифры: %s", roman))
 		}
 		if prevValue < value {
 			arabic += value - 2*prevValue
