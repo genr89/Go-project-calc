@@ -9,7 +9,7 @@ import (
 )
 
 // Функция для конвертации римских цифр в арабские
-func romanToArabic(roman string) (int, error) {
+func romanToArabic(roman string) int {
 	romanNumerals := map[rune]int{
 		'I': 1,
 		'V': 5,
@@ -24,7 +24,7 @@ func romanToArabic(roman string) (int, error) {
 	for _, r := range roman {
 		value, found := romanNumerals[r]
 		if !found {
-			panic(fmt.Sprintf("некорректные римские цифры: %s", roman))
+			panic("Ошибка: некорректные римские цифры")
 		}
 		if prevValue < value {
 			arabic += value - 2*prevValue
@@ -33,13 +33,13 @@ func romanToArabic(roman string) (int, error) {
 		}
 		prevValue = value
 	}
-	return arabic, nil
+	return arabic
 }
 
 // Функция для конвертации арабских чисел в римские
-func arabicToRoman(arabic int) (string, error) {
+func arabicToRoman(arabic int) string {
 	if arabic <= 0 || arabic > 3999 {
-		return "", fmt.Errorf("число вне диапазона (1-3999): %d", arabic)
+		panic("Ошибка: число вне диапазона (1-3999)")
 	}
 
 	romanNumerals := []struct {
@@ -68,7 +68,7 @@ func arabicToRoman(arabic int) (string, error) {
 			arabic -= numeral.Value
 		}
 	}
-	return result.String(), nil
+	return result.String()
 }
 
 func main() {
@@ -105,10 +105,9 @@ func main() {
 
 		num1, err := strconv.Atoi(parts[0])
 		if err != nil {
-			num1, err = romanToArabic(parts[0])
-			if err != nil {
-				fmt.Println("Ошибка:", err)
-				continue
+			num1 = romanToArabic(parts[0])
+			if num1 > 10 {
+				panic("Ошибка: число должно быть от 1 до 10")
 			}
 		}
 
@@ -116,10 +115,9 @@ func main() {
 
 		num2, err := strconv.Atoi(parts[2])
 		if err != nil {
-			num2, err = romanToArabic(parts[2])
-			if err != nil {
-				fmt.Println("Ошибка:", err)
-				continue
+			num2 = romanToArabic(parts[2])
+			if num2 > 10 {
+				panic("Ошибка: число должно быть от 1 до 10")
 			}
 		}
 
@@ -144,13 +142,8 @@ func main() {
 		}
 
 		// Вывод результата в римских цифрах, если ввод был римским
-		if isNum1Roman {
-			romanResult, err := arabicToRoman(result)
-			if err != nil {
-				fmt.Println("Ошибка:", err)
-				continue
-			}
-			fmt.Println(romanResult)
+		if _, err := strconv.Atoi(parts[0]); err != nil {
+			fmt.Println(arabicToRoman(result))
 		} else {
 			fmt.Println(result)
 		}
