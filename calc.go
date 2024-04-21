@@ -99,16 +99,12 @@ func main() {
 		isNum1Roman := isRoman(parts[0])
 		isNum2Roman := isRoman(parts[2])
 		if (isNum1Roman && !isNum2Roman) || (!isNum1Roman && isNum2Roman) {
-			fmt.Println("Ошибка: используйте либо только арабские, либо только римские числа.")
-			continue
+			panic("Ошибка: используйте либо только арабские, либо только римские числа.")
 		}
 
 		num1, err := strconv.Atoi(parts[0])
 		if err != nil {
 			num1 = romanToArabic(parts[0])
-			if num1 > 10 {
-				panic("Ошибка: число должно быть от 1 до 10")
-			}
 		}
 
 		operator := parts[1]
@@ -116,9 +112,6 @@ func main() {
 		num2, err := strconv.Atoi(parts[2])
 		if err != nil {
 			num2 = romanToArabic(parts[2])
-			if num2 > 10 {
-				panic("Ошибка: число должно быть от 1 до 10")
-			}
 		}
 
 		// Выполнение операции
@@ -132,17 +125,15 @@ func main() {
 			result = num1 * num2
 		case "/":
 			if num2 == 0 {
-				fmt.Println("Ошибка: деление на ноль")
-				continue
+				panic("Ошибка: деление на ноль")
 			}
 			result = num1 / num2
 		default:
-			fmt.Println("Неподдерживаемый оператор.")
-			continue
+			panic("Неподдерживаемый оператор.")
 		}
 
 		// Вывод результата в римских цифрах, если ввод был римским
-		if _, err := strconv.Atoi(parts[0]); err != nil {
+		if isNum1Roman {
 			fmt.Println(arabicToRoman(result))
 		} else {
 			fmt.Println(result)
