@@ -114,6 +114,11 @@ func main() {
 			num2 = romanToArabic(parts[2])
 		}
 
+		// Проверка на ввод чисел больше 10
+		if num1 > 10 || num2 > 10 {
+			panic("Ошибка: числа должны быть в диапазоне (1-10) или в римском формате.")
+		}
+
 		// Выполнение операции
 		var result int
 		switch operator {
