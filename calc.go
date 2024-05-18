@@ -1,157 +1,160 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
-// Функция для конвертации римских цифр в арабские
-func romanToArabic(roman string) int {
-	romanNumerals := map[rune]int{
-		'I': 1,
-		'V': 5,
-		'X': 10,
-		'L': 50,
-		'C': 100,
-		'D': 500,
-		'M': 1000,
-	}
-	arabic := 0
-	prevValue := 0
-	for _, r := range roman {
-		value, found := romanNumerals[r]
-		if !found {
-			panic("Ошибка: некорректные римские цифры")
-		}
-		if prevValue < value {
-			arabic += value - 2*prevValue
-		} else {
-			arabic += value
-		}
-		prevValue = value
-	}
-	return arabic
-}
-
-// Функция для конвертации арабских чисел в римские
-func arabicToRoman(arabic int) string {
-	if arabic <= 0 || arabic > 3999 {
-		panic("Ошибка: число вне диапазона (1-3999)")
-	}
-
-	romanNumerals := []struct {
-		Value  int
-		Symbol string
-	}{
-		{1000, "M"},
-		{900, "CM"},
-		{500, "D"},
-		{400, "CD"},
-		{100, "C"},
-		{90, "XC"},
-		{50, "L"},
-		{40, "XL"},
-		{10, "X"},
-		{9, "IX"},
-		{5, "V"},
-		{4, "IV"},
-		{1, "I"},
-	}
-
-	var result strings.Builder
-	for _, numeral := range romanNumerals {
-		for arabic >= numeral.Value {
-			result.WriteString(numeral.Symbol)
-			arabic -= numeral.Value
-		}
-	}
-	return result.String()
-}
-
 func main() {
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Println("Простой Римский/Арабский Калькулятор")
-	fmt.Println("Введите выражение в формате: число оператор число (например: III + II или 3 + 2)")
-	fmt.Println("Для выхода введите exit")
-
-	for {
-		fmt.Print(">> ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		if input == "exit" {
-			fmt.Println("Программа завершена.")
-			return
-		}
-
-		// Разделение ввода на числа и оператор
-		parts := strings.Split(input, " ")
-		if len(parts) != 3 {
-			fmt.Println("Неправильный формат. Пожалуйста, введите выражение снова.")
-			continue
-		}
-
-		// Проверка, что вводимые числа либо оба арабские, либо оба римские
-		isNum1Roman := isRoman(parts[0])
-		isNum2Roman := isRoman(parts[2])
-		if (isNum1Roman && !isNum2Roman) || (!isNum1Roman && isNum2Roman) {
-			panic("Ошибка: используйте либо только арабские, либо только римские числа.")
-		}
-
-		num1, err := strconv.Atoi(parts[0])
-		if err != nil {
-			num1 = romanToArabic(parts[0])
-		}
-
-		operator := parts[1]
-
-		num2, err := strconv.Atoi(parts[2])
-		if err != nil {
-			num2 = romanToArabic(parts[2])
-		}
-
-		// Проверка на ввод чисел больше 10
-		if num1 > 10 || num2 > 10 {
-			panic("Ошибка: числа должны быть в диапазоне (1-10) или в римском формате.")
-		}
-
-		// Выполнение операции
-		var result int
-		switch operator {
-		case "+":
-			result = num1 + num2
-		case "-":
-			result = num1 - num2
-		case "*":
-			result = num1 * num2
-		case "/":
-			if num2 == 0 {
-				panic("Ошибка: деление на ноль")
-			}
-			result = num1 / num2
-		default:
-			panic("Неподдерживаемый оператор.")
-		}
-
-		// Вывод результата в римских цифрах, если ввод был римским
-		if isNum1Roman {
-			fmt.Println(arabicToRoman(result))
-		} else {
-			fmt.Println(result)
-		}
+	if len(os.Args) != 2 {
+		panic("Usage: ./calc \"expression\"")
 	}
+
+	expression := os.Args[1]
+	var result string
+	var err error
+
+	// Убираем кавычки вокруг строк и разбиваем выражение на части
+	tokens := parseExpression(expression)
+
+	if len(tokens) != 3 {
+		panic("Invalid expression format")
+	}
+
+	switch tokens[1] {
+	case "+":
+		result, err = add(tokens[0], tokens[2])
+	case "-":
+		result, err = subtract(tokens[0], tokens[2])
+	case "*":
+		result, err = multiply(tokens[0], tokens[2])
+	case "/":
+		result, err = divide(tokens[0], tokens[2])
+	default:
+		panic("Unsupported operation")
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	if len(result) > 40 {
+		result = result[:40] + "..."
+	}
+
+	fmt.Printf("%s\n", result)
 }
 
-// Функция для проверки, является ли строка римским числом
-func isRoman(s string) bool {
-	for _, r := range s {
-		if r != 'I' && r != 'V' && r != 'X' && r != 'L' && r != 'C' && r != 'D' && r != 'M' {
-			return false
+func parseExpression(expression string) []string {
+	tokens := make([]string, 0, 3)
+	var token strings.Builder
+	inQuotes := false
+
+	for _, r := range expression {
+		switch {
+		case r == '"':
+			inQuotes = !inQuotes
+			if !inQuotes {
+				tokens = append(tokens, token.String())
+				token.Reset()
+			}
+		case unicode.IsSpace(r) && !inQuotes:
+			continue
+		case (r == '+' || r == '-' || r == '*' || r == '/') && !inQuotes:
+			if token.Len() > 0 {
+				tokens = append(tokens, token.String())
+				token.Reset()
+			}
+			tokens = append(tokens, string(r))
+		default:
+			token.WriteRune(r)
 		}
 	}
-	return true
+
+	if token.Len() > 0 {
+		tokens = append(tokens, token.String())
+	}
+
+	return tokens
+}
+
+func add(a, b string) (string, error) {
+	if isNumeric(a) && isNumeric(b) {
+		num1, _ := strconv.Atoi(a)
+		num2, _ := strconv.Atoi(b)
+		return strconv.Itoa(num1 + num2), nil
+	}
+
+	if isValidString(a) && isValidString(b) {
+		return a + b, nil
+	}
+
+	return "", fmt.Errorf("Invalid string format")
+}
+
+func subtract(a, b string) (string, error) {
+	if isNumeric(a) && isNumeric(b) {
+		num1, _ := strconv.Atoi(a)
+		num2, _ := strconv.Atoi(b)
+		return strconv.Itoa(num1 - num2), nil
+	}
+
+	if isValidString(a) && isValidString(b) {
+		return strings.Replace(a, b, "", -1), nil
+	}
+
+	return "", fmt.Errorf("Invalid string format")
+}
+
+func multiply(a, b string) (string, error) {
+	if isNumeric(a) && isNumeric(b) {
+		num1, _ := strconv.Atoi(a)
+		num2, _ := strconv.Atoi(b)
+		return strconv.Itoa(num1 * num2), nil
+	}
+
+	if isValidString(a) {
+		n, err := strconv.Atoi(b)
+		if err != nil || n < 1 || n > 10 {
+			return "", fmt.Errorf("Invalid number format")
+		}
+		return strings.Repeat(a, n), nil
+	}
+
+	return "", fmt.Errorf("Invalid string format")
+}
+
+func divide(a, b string) (string, error) {
+	if isNumeric(a) && isNumeric(b) {
+		num1, _ := strconv.Atoi(a)
+		num2, _ := strconv.Atoi(b)
+		if num2 == 0 {
+			return "", fmt.Errorf("Division by zero")
+		}
+		return strconv.Itoa(num1 / num2), nil
+	}
+
+	if isValidString(a) {
+		n, err := strconv.Atoi(b)
+		if err != nil || n < 1 || n > 10 {
+			return "", fmt.Errorf("Invalid number format")
+		}
+
+		substrLen := len(a) / n
+		return a[:substrLen], nil
+	}
+
+	return "", fmt.Errorf("Invalid string format")
+}
+
+func isValidString(s string) bool {
+	return len(s) <= 10
+}
+
+func isNumeric(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
 }
